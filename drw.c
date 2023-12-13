@@ -236,7 +236,7 @@ drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int
 }
 
 int
-drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert)
+drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert, int cutOffEarly)
 {
 	int ty, ellipsis_x = 0;
 	unsigned int tmpw, ew, ellipsis_w = 0, ellipsis_len, hash, h0, h1;
@@ -275,7 +275,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 		ew = ellipsis_len = utf8strlen = 0;
 		utf8str = text;
 		nextfont = NULL;
-		while (*text) {
+		while (text != NULL && *text) {
 			utf8charlen = utf8decode(text, &utf8codepoint, UTF_SIZ);
 			for (curfont = drw->fonts; curfont; curfont = curfont->next) {
 				charexists = charexists || XftCharExists(drw->dpy, curfont->xfont, utf8codepoint);
@@ -298,9 +298,13 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 						else
 							utf8strlen = ellipsis_len;
 					} else if (curfont == usedfont) {
-						utf8strlen += utf8charlen;
-						text += utf8charlen;
-						ew += tmpw;
+						if (cutOffEarly && text[0] == '!') {
+							text=NULL;
+						} else {
+							utf8strlen += utf8charlen;
+							text += utf8charlen;
+							ew += tmpw;
+						}
 					} else {
 						nextfont = curfont;
 					}
@@ -324,9 +328,9 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 			w -= ew;
 		}
 		if (render && overflow)
-			drw_text(drw, ellipsis_x, y, ellipsis_w, h, 0, "...", invert);
+			drw_text(drw, ellipsis_x, y, ellipsis_w, h, 0, "...", invert, 0);
 
-		if (!*text || overflow) {
+		if (text == NULL || !*text || overflow) {
 			break;
 		} else if (nextfont) {
 			charexists = 0;
@@ -400,15 +404,15 @@ drw_fontset_getwidth(Drw *drw, const char *text)
 {
 	if (!drw || !drw->fonts || !text)
 		return 0;
-	return drw_text(drw, 0, 0, 0, 0, 0, text, 0);
+	return drw_text(drw, 0, 0, 0, 0, 0, text, 0, 0);
 }
 
 unsigned int
-drw_fontset_getwidth_clamp(Drw *drw, const char *text, unsigned int n)
+drw_fontset_getwidth_clamp(Drw *drw, const char *text, unsigned int n, int cutOffEarly)
 {
 	unsigned int tmp = 0;
 	if (drw && drw->fonts && text && n)
-		tmp = drw_text(drw, 0, 0, 0, 0, 0, text, n);
+		tmp = drw_text(drw, 0, 0, 0, 0, 0, text, n, cutOffEarly);
 	return MIN(n, tmp);
 }
 

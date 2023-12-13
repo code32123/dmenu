@@ -16,6 +16,7 @@ static const char *colors[SchemeLast][2] = {
 /* -l option; if nonzero, dmenu uses vertical list with given number of lines */
 static unsigned int lines      = 0;
 
+static int cutOffEarly = 0;                       /* -j  option; if 1, input is cut short after a character (Set at comilation type, '!' by default)         */
 /*
  * Characters not considered part of a word while deleting words
  * for example: " /?\"&[]"
