@@ -445,6 +445,7 @@ insert:
 		}
 		sel = matchend;
 		break;
+	case XK_Super_L:
 	case XK_Escape:
 		cleanup();
 		exit(1);
